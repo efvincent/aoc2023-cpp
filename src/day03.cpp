@@ -23,11 +23,12 @@ std::ostream& operator<<(std::ostream& os, const Part& p) {
 }
 
 struct Puzzle {
-  const std::vector<char> data;
-  const int stride;
-  const int lineCount;
-  const std::vector<Vec2> symbols;
-  const std::vector<Part> parts;
+  std::vector<char> data;
+  int stride;
+  int lineCount;
+  BoundingBox bbox;
+  std::vector<Vec2> symbols;
+  std::vector<Part> parts;
 
   const char get(int x, int y) const {
     if(y >= lineCount || x >= stride)
@@ -38,25 +39,42 @@ struct Puzzle {
   static inline int max(int a, int b) { return a > b  ? a : b; }
   static inline int min(int a, int b) { return a < b  ? a : b; }
 
-  const bool isValidPart(const Part& part) const {
-    int x1 = max(0u, part.start.x - 1u);
-    int x2 = min(stride - 1, part.start.x + part.len);
+  const bool isValidPart(Part& part) {
+    // clip the bounding box to the dimensions of the puzzle so
+    // we don't attempt to index outside of range
+    BoundingBox::clipTo(part.bbox, bbox);
 
-    int y1 = max(0u, part.start.y - 1);
-    int y2 = min(lineCount - 1, part.start.y + 1);
+    // int x1 = max(0u, part.start.x - 1u);
+    // int x2 = min(stride - 1, part.start.x + part.len);
+
+    // int y1 = max(0u, part.start.y - 1);
+    // int y2 = min(lineCount - 1, part.start.y + 1);
     
     // loop through all the surrounding locations looking
     // for a symbol. If one is found, short circuit return true
 
-    for (int y = y1; y <= y2; y++) {
-      for (int x = x1; x <= x2; x++) {
-        char c = get(x,y);
-        if (get(x,y) != '.' && !(c >= '0' && c <= '9')) {
-          return true;
-        } 
+    // Lambda to check if a part is valid
+    bool isValid = false;
+    auto isValidPart = [this, &isValid](const Vec2& pos) -> bool {
+      char c = get(pos.x, pos.y);
+      if (c != '.' && !(c >= '0' && c <= '9')) {
+        isValid = true;
+        return false;   // short circuit forEachpoint
       }
-    }
-    return false;
+      return true;      // keep checking
+    };    
+
+    part.bbox.forEachPoint(isValidPart);
+
+    // for (int y = y1; y <= y2; y++) {
+    //   for (int x = x1; x <= x2; x++) {
+    //     char c = get(x,y);
+    //     if (get(x,y) != '.' && !(c >= '0' && c <= '9')) {
+    //       return true;
+    //     } 
+    //   }
+    // }
+    return isValid;
   }
 };
 
@@ -85,9 +103,9 @@ const Puzzle parse(const std::string& filename) {
       int number = std::stoi(numStr.data());
       int numLen = numStr.size();
       numStr = std::vector<char>();
-      Vec2 startLocation{nStart, static_cast<u_int8_t>(height - 1)};
+      Vec2 startLocation{nStart, height - 1};
 
-      BoundingBox bb{Vec2{0,0}, Vec2{0,0}};
+      BoundingBox bb{Vec2{nStart-1,height - 2}, Vec2{nStart + numLen + 1, height + 1}};
       Part p{startLocation, bb, numLen, number};
       parts.push_back(p);
       inNum = false;
@@ -106,7 +124,8 @@ const Puzzle parse(const std::string& filename) {
           int numLen = numStr.size();
           numStr = std::vector<char>();;
           Vec2 startLocation{nStart, height};
-          Part p{startLocation, BoundingBox(), numLen, number };
+          BoundingBox bb{Vec2{nStart - 1,height - 1}, Vec2{nStart + numLen, height + 1}};
+          Part p{startLocation, bb, numLen, number };
           parts.push_back(p);
         }
         inNum = false;
@@ -117,14 +136,28 @@ const Puzzle parse(const std::string& filename) {
     }
     ++height;
   }
+  if (inNum) {
+      // last line ended in a number, close that one out
+      int number = std::stoi(numStr.data());
+      int numLen = numStr.size();
+      numStr = std::vector<char>();
+      Vec2 startLocation{nStart - 1, height - 2};
+
+      BoundingBox bb{Vec2{nStart - 1,height - 2}, Vec2{nStart + numLen + 1, height + 1}};
+      Part p{startLocation, bb, numLen, number};
+      parts.push_back(p);
+      inNum = false;    
+  }
+
   file.close();
-  return Puzzle{contents, width, height, symbols, parts };
+  auto bb = BoundingBox{Vec2{0,0}, Vec2{width - 1, height - 1}};
+  return Puzzle{contents, width, height, bb, symbols, parts };
 }
 
-const uint part1(const std::string& filename) {
+const uint part1(const std::string& filename) {  // 535235
   Puzzle puz = parse(filename);
   u_int32_t total = 0;
-  for (const Part& p : puz.parts) {
+  for (Part& p : puz.parts) {
     if (puz.isValidPart(p)) {
       total += p.num;
     } 

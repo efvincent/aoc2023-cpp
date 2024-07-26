@@ -6,23 +6,33 @@ std::ostream& operator<<(std::ostream& os, const Vec2& vec) {
   return os;
 }
 
-BoundingBox BoundingBox::operator+(const Vec2& offset) const {
+BoundingBox BoundingBox::operator+(const Vec2& offset) {
   return {
     {upperLeft.x + offset.x, upperLeft.y + offset.y},
     {lowerRight.x + offset.x, lowerRight.y + offset.y}
   };
 }
 
-BoundingBox BoundingBox::operator-(const Vec2& offset) const {
+BoundingBox BoundingBox::operator-(const Vec2& offset) {
   return {
     {upperLeft.x - offset.x, upperLeft.y - offset.y},
     {lowerRight.x - offset.x, lowerRight.y - offset.y}
   };
 }
 
-void BoundingBox::clipTo(const BoundingBox& other) {
-  upperLeft.x = std::max(upperLeft.x, other.upperLeft.x);
-  upperLeft.y = std::max(upperLeft.y, other.upperLeft.y);
-  lowerRight.x = std::min(lowerRight.x, other.lowerRight.x);
-  lowerRight.y = std::min(lowerRight.y, other.lowerRight.y);
+void BoundingBox::clipTo(BoundingBox& boxToClip, BoundingBox& clippingBox) {
+  boxToClip.upperLeft.x = std::max(boxToClip.upperLeft.x, clippingBox.upperLeft.x);
+  boxToClip.upperLeft.y = std::max(boxToClip.upperLeft.y, clippingBox.upperLeft.y);
+  boxToClip.lowerRight.x = std::min(boxToClip.lowerRight.x, clippingBox.lowerRight.x);
+  boxToClip.lowerRight.y = std::min(boxToClip.lowerRight.y, clippingBox.lowerRight.y);
+}
+
+void BoundingBox::forEachPoint(const std::function<bool(const Vec2&)>& func) const {
+  for (int x = upperLeft.x; x <= lowerRight.x; ++x) {
+    for (int y = upperLeft.y; y <= lowerRight.y; ++y) {
+      if (!func({x, y})) {
+        return;
+      }
+    }
+  }
 }
