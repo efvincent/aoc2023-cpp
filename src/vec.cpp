@@ -36,3 +36,8 @@ void BoundingBox::forEachPoint(const std::function<bool(const Vec2&)>& func) con
     }
   }
 }
+
+bool BoundingBox::isPointInBox(const Vec2& point) const {
+  return point.x >= upperLeft.x && point.x <= lowerRight.x &&
+         point.y >= upperLeft.y && point.y <= lowerRight.y;
+}

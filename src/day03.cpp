@@ -11,47 +11,31 @@
 namespace Day03 {
 
 struct Part {
-  Vec2 start;
-  BoundingBox bbox;
-  int len;
-  int num;
+  BoundingBox bbox{Vec2{0,0}, Vec2{0,0}};
+  int num = 0;
 };
 
 std::ostream& operator<<(std::ostream& os, const Part& p) {
-  os << p.num << "[" << p.len << "]" <<  " (" << p.start.x << "," << p.start.y << ")";
+  os << p.num; 
   return os;
 }
 
 struct Puzzle {
   std::vector<char> data;
-  int stride;
-  int lineCount;
-  BoundingBox bbox;
+  BoundingBox bbox{Vec2{0,0}, Vec2{0,0}};
   std::vector<Vec2> symbols;
   std::vector<Part> parts;
 
   const char get(int x, int y) const {
-    if(y >= lineCount || x >= stride)
+    if (!bbox.isPointInBox(Vec2{x,y}))
       throw std::runtime_error("Puzzle index out of bounds");
-    return data[y * stride + x];
+    return data[y * (bbox.lowerRight.x + 1)  + x];
   }
-
-  static inline int max(int a, int b) { return a > b  ? a : b; }
-  static inline int min(int a, int b) { return a < b  ? a : b; }
 
   const bool isValidPart(Part& part) {
     // clip the bounding box to the dimensions of the puzzle so
     // we don't attempt to index outside of range
     BoundingBox::clipTo(part.bbox, bbox);
-
-    // int x1 = max(0u, part.start.x - 1u);
-    // int x2 = min(stride - 1, part.start.x + part.len);
-
-    // int y1 = max(0u, part.start.y - 1);
-    // int y2 = min(lineCount - 1, part.start.y + 1);
-    
-    // loop through all the surrounding locations looking
-    // for a symbol. If one is found, short circuit return true
 
     // Lambda to check if a part is valid
     bool isValid = false;
@@ -65,18 +49,16 @@ struct Puzzle {
     };    
 
     part.bbox.forEachPoint(isValidPart);
-
-    // for (int y = y1; y <= y2; y++) {
-    //   for (int x = x1; x <= x2; x++) {
-    //     char c = get(x,y);
-    //     if (get(x,y) != '.' && !(c >= '0' && c <= '9')) {
-    //       return true;
-    //     } 
-    //   }
-    // }
     return isValid;
   }
 };
+
+void addPart(std::vector<Part>& parts, const std::vector<char>& numStr, int nStart, int height, int width) {
+  int number = std::stoi(numStr.data());
+  BoundingBox bb{Vec2{nStart - 1, height - 1}, Vec2{nStart + width, height + 1}};
+  Part p{bb, number};
+  parts.push_back(p);
+}
 
 /// Get the dimensions (x,y) of the data in the file. Will be used
 /// to determine the stride
@@ -85,12 +67,10 @@ const Puzzle parse(const std::string& filename) {
   if (!file.is_open()) {
     throw std::runtime_error("Could not open file " + filename);
   }
-  std::string line;
-  std::vector<char> contents;  // allocate max expected space
-  int width = 0, height = 0;
-
+  int width = 0, height = 0, nStart = 0;
   bool inNum = false;
-  int nStart = 0;
+  std::string line;
+  std::vector<char> contents; 
   std::vector<char> numStr;
   std::vector<Part> parts;
   std::vector<Vec2> symbols;
@@ -99,15 +79,8 @@ const Puzzle parse(const std::string& filename) {
     width = line.length();
     contents.insert(contents.end(), line.begin(), line.end());
     if (inNum) {
-      // last line ended in a number, close that one out
-      int number = std::stoi(numStr.data());
-      int numLen = numStr.size();
+      addPart(parts, numStr, nStart, height - 1, numStr.size() + 1);
       numStr = std::vector<char>();
-      Vec2 startLocation{nStart, height - 1};
-
-      BoundingBox bb{Vec2{nStart-1,height - 2}, Vec2{nStart + numLen + 1, height + 1}};
-      Part p{startLocation, bb, numLen, number};
-      parts.push_back(p);
       inNum = false;
     }
 
@@ -119,14 +92,9 @@ const Puzzle parse(const std::string& filename) {
         inNum = true;
       } else {
         if (inNum) {
-          // we were in a number, wrap it up
-          int number = std::stoi(numStr.data());
-          int numLen = numStr.size();
-          numStr = std::vector<char>();;
-          Vec2 startLocation{nStart, height};
-          BoundingBox bb{Vec2{nStart - 1,height - 1}, Vec2{nStart + numLen, height + 1}};
-          Part p{startLocation, bb, numLen, number };
-          parts.push_back(p);
+          addPart(parts, numStr, nStart, height, numStr.size());
+          numStr = std::vector<char>();
+          inNum = false;
         }
         inNum = false;
         if (cur != '.') {
@@ -136,27 +104,20 @@ const Puzzle parse(const std::string& filename) {
     }
     ++height;
   }
+  // if there's a number in the lower right corner, inNum will be true. Capture
+  // this last number
   if (inNum) {
-      // last line ended in a number, close that one out
-      int number = std::stoi(numStr.data());
-      int numLen = numStr.size();
-      numStr = std::vector<char>();
-      Vec2 startLocation{nStart - 1, height - 2};
-
-      BoundingBox bb{Vec2{nStart - 1,height - 2}, Vec2{nStart + numLen + 1, height + 1}};
-      Part p{startLocation, bb, numLen, number};
-      parts.push_back(p);
-      inNum = false;    
+      addPart(parts, numStr, nStart, height - 1, numStr.size() + 1);
   }
 
   file.close();
   auto bb = BoundingBox{Vec2{0,0}, Vec2{width - 1, height - 1}};
-  return Puzzle{contents, width, height, bb, symbols, parts };
+  return Puzzle{contents, bb, symbols, parts };
 }
 
 const uint part1(const std::string& filename) {  // 535235
   Puzzle puz = parse(filename);
-  u_int32_t total = 0;
+  unsigned int total = 0;
   for (Part& p : puz.parts) {
     if (puz.isValidPart(p)) {
       total += p.num;
@@ -166,12 +127,6 @@ const uint part1(const std::string& filename) {  // 535235
 }
 
 const uint part2(const std::string& filename) {
-  // algo: 
-  // scan the file
-  // for each symbol
-  // scan all the way around the symbol looking for numbers
-  // if a number is found, find the whole number and note its starting index
-  // de-dupe the found numbers. If the found numbers
   return 0;
 }
 

@@ -14,4 +14,5 @@ struct BoundingBox {
   BoundingBox operator-(const Vec2& offset);
   static void clipTo(BoundingBox& boxToClip, BoundingBox& clippingBox);
   void forEachPoint(const std::function<bool(const Vec2&)>& func) const;
+  bool isPointInBox(const Vec2& point) const;
 };
