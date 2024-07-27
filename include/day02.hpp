@@ -6,9 +6,9 @@
 
 namespace Day02 {
 
-typedef std::array<u_int32_t, 3> Drawing;
-typedef std::vector<Drawing> Drawings;
-typedef std::vector<std::string> Strings;
+using Drawing = std::array<u_int32_t, 3>;
+using Drawings = std::vector<Drawing>;
+using Strings = std::vector<std::string>;
 
 struct Game {
   int id;
@@ -22,9 +22,7 @@ struct Puzzle {
   Games games;
 };
 
-const Puzzle parse(const u_int32_t maxRed, const u_int32_t maxGreen, const u_int32_t maxBlue, const std::string& filename);
+uint part1(const Puzzle& puz);
 
-const u_int32_t part1(const Puzzle& puz);
-
-const size_t part2(const Puzzle& puz);
+uint part2(const Puzzle& puz);
 }

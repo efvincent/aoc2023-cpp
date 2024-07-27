@@ -20,7 +20,7 @@ BoundingBox BoundingBox::operator-(const Vec2& offset) {
   };
 }
 
-void BoundingBox::clipTo(BoundingBox& boxToClip, BoundingBox& clippingBox) {
+void BoundingBox::clipTo(BoundingBox& boxToClip, const BoundingBox& clippingBox) {
   boxToClip.upperLeft.x = std::max(boxToClip.upperLeft.x, clippingBox.upperLeft.x);
   boxToClip.upperLeft.y = std::max(boxToClip.upperLeft.y, clippingBox.upperLeft.y);
   boxToClip.lowerRight.x = std::min(boxToClip.lowerRight.x, clippingBox.lowerRight.x);

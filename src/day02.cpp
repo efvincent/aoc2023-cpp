@@ -8,7 +8,7 @@
 
 namespace Day02 {
 
-const std::pair<u_int32_t, u_int32_t> parseCubeCount(const std::string& handStr) {
+std::pair<uint, uint> parseCubeCount(const std::string& handStr) {
   // example: handStr = "3 blue"
   // index of a color is the length of the colors string minus 3
   // red = 0
@@ -18,7 +18,7 @@ const std::pair<u_int32_t, u_int32_t> parseCubeCount(const std::string& handStr)
   return std::pair(cubCountParts[1].size() - 3, std::stoi(cubCountParts[0]));
 }
 
-const Drawing parseDrawing(const std::string& drawingStr) {
+Drawing parseDrawing(const std::string& drawingStr) {
   // example: handsStr = 3 blue, 4 red; 1 red, 2 green, 6 blue; 2 green
   auto cubeCountStrs = Util::splitOn(drawingStr, ", ");
   Drawing drawing{0,0,0};
@@ -29,7 +29,7 @@ const Drawing parseDrawing(const std::string& drawingStr) {
   return drawing;
 }
 
-const Game parseGame(const std::string& line) {
+Game parseGame(const std::string& line) {
   // line = "Game 1: 3 blue, 4 red; 1 red, 2 green, 6 blue; 2 green"
   auto lineParts = Util::splitOn(line, ": ");
   auto gameNumParts = Util::splitOn(lineParts[0], " ");
@@ -47,7 +47,7 @@ const Game parseGame(const std::string& line) {
   return Game{gameNum, hands};
 }
 
-const Puzzle parse(const u_int32_t maxRed, const u_int32_t maxGreen, const u_int32_t maxBlue,
+Puzzle parse(const u_int32_t maxRed, const u_int32_t maxGreen, const u_int32_t maxBlue,
                    const std::string &filename) {
   auto games = Util::importFile<Game>(filename, parseGame);
   Puzzle puz{{maxRed, maxBlue, maxGreen}, games};
@@ -63,7 +63,7 @@ const bool possible(const Drawing& max, const Drawings& drawings) {
   return true;
 }
 
-const u_int32_t part1(const Puzzle& puz) {
+uint part1(const Puzzle& puz) {
   u_int32_t total = 0;
   for (const auto& game : puz.games) {
     total += possible(puz.maxCounts, game.drawings) ? game.id : 0;
@@ -71,7 +71,7 @@ const u_int32_t part1(const Puzzle& puz) {
   return total;
 }
 
-const size_t part2(const Puzzle& puz) {
+uint part2(const Puzzle& puz) {
   size_t total(0);
   for(const auto& game : puz.games) {
     Drawing max{0,0,0};
