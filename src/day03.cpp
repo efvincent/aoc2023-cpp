@@ -13,8 +13,26 @@ namespace Day03 {
 enum class AOC_PART { One, Two };
 
 struct Part {
-  BoundingBox bbox{Vec2{0,0}, Vec2{0,0}};
+  BoundingBox bbox;
   int num = 0;
+};
+
+struct Puzzle {
+  Puzzle() = delete;
+  Puzzle(std::vector<char>&& data, BoundingBox bbox, std::vector<Vec2>&& symbols, 
+        std::vector<Part>&& parts) : 
+          data(std::move(data)), 
+          bbox(std::move(bbox)), 
+          symbols(std::move(symbols)), 
+          parts(std::move(parts)) { }
+
+  std::vector<char> data;
+  BoundingBox bbox;
+  std::vector<Vec2> symbols;
+  std::vector<Part> parts;
+
+  char get(int x, int y) const;
+  bool isValidPart(Part& part);
 };
 
 std::ostream& operator<<(std::ostream& os, const Part& p) {
@@ -22,44 +40,37 @@ std::ostream& operator<<(std::ostream& os, const Part& p) {
   return os;
 }
 
-struct Puzzle {
-  std::vector<char> data;
-  BoundingBox bbox{Vec2{0,0}, Vec2{0,0}};
-  std::vector<Vec2> symbols;
-  std::vector<Part> parts;
+char Puzzle::get(int x, int y) const {
+  if (!bbox.isPointInBox(Vec2{x,y}))
+    throw std::runtime_error("Puzzle index out of bounds");
+  return data[y * (bbox.lowerRight.x + 1) + x];
+}
 
-  const char get(int x, int y) const {
-    if (!bbox.isPointInBox(Vec2{x,y}))
-      throw std::runtime_error("Puzzle index out of bounds");
-    return data[y * (bbox.lowerRight.x + 1)  + x];
-  }
+bool Puzzle::isValidPart(Part& part) {
+  // clip the bounding box to the dimensions of the puzzle so
+  // we don't attempt to index outside of range
+  BoundingBox::clipTo(part.bbox, bbox);
 
-  const bool isValidPart(Part& part) {
-    // clip the bounding box to the dimensions of the puzzle so
-    // we don't attempt to index outside of range
-    BoundingBox::clipTo(part.bbox, bbox);
+  // Lambda to check if a part is valid
+  bool isValid = false;
+  auto isValidPart = [this, &isValid](const Vec2& pos) -> bool {
+    char c = get(pos.x, pos.y);
+    if (c != '.' && !(c >= '0' && c <= '9')) {
+      isValid = true;
+      return false;   // short circuit forEachpoint
+    }
+    return true;      // keep checking
+  };    
 
-    // Lambda to check if a part is valid
-    bool isValid = false;
-    auto isValidPart = [this, &isValid](const Vec2& pos) -> bool {
-      char c = get(pos.x, pos.y);
-      if (c != '.' && !(c >= '0' && c <= '9')) {
-        isValid = true;
-        return false;   // short circuit forEachpoint
-      }
-      return true;      // keep checking
-    };    
-
-    part.bbox.forEachPoint(isValidPart);
-    return isValid;
-  }
-};
+  part.bbox.forEachPoint(isValidPart);
+  return isValid;
+}  
 
 void addPart(std::vector<Part>& parts, const std::vector<char>& numStr, int nStart, int height, int width) {
   int number = std::stoi(numStr.data());
   BoundingBox bb{Vec2{nStart - 1, height - 1}, Vec2{nStart + width, height + 1}};
-  Part p{bb, number};
-  parts.push_back(p);
+  Part p{std::move(bb), number};
+  parts.push_back(std::move(p));
 }
 
 /// Get the dimensions (x,y) of the data in the file. Will be used
@@ -115,10 +126,10 @@ const Puzzle parse(const std::string& filename, const AOC_PART questionPart = AO
 
   file.close();
   auto bb = BoundingBox{Vec2{0,0}, Vec2{width - 1, height - 1}};
-  return Puzzle{contents, bb, symbols, parts };
+  return Puzzle(std::move(contents), std::move(bb), std::move(symbols), std::move(parts));
 }
 
-const uint part1(const std::string& filename) {  // 535235
+uint part1(const std::string& filename) {  // 535235
   Puzzle puz = parse(filename);
   unsigned int total{0};
   for (Part& p : puz.parts) {
@@ -133,7 +144,7 @@ const uint partScore(const Puzzle& puz, const Vec2& gear) {
   // run through all the parts, see which are next to gear
   uint total = 1;
   int count = 0;
-  for (Part p : puz.parts) {
+  for (const Part& p : puz.parts) {
     if (p.bbox.isPointInBox(gear)) {
       count++;
       total *= p.num;
@@ -145,7 +156,7 @@ const uint partScore(const Puzzle& puz, const Vec2& gear) {
   return 0;
 }
 
-const uint part2(const std::string& filename) {
+uint part2(const std::string& filename) {
   // run through every symbol, check what distinct numbers they border
   // if #distinct borders = 2, mult them and add to the total
   Puzzle puz = parse(filename, AOC_PART::Two);
