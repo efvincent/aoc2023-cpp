@@ -10,6 +10,8 @@
 
 namespace Day03 {
 
+enum class AOC_PART { One, Two };
+
 struct Part {
   BoundingBox bbox{Vec2{0,0}, Vec2{0,0}};
   int num = 0;
@@ -62,7 +64,7 @@ void addPart(std::vector<Part>& parts, const std::vector<char>& numStr, int nSta
 
 /// Get the dimensions (x,y) of the data in the file. Will be used
 /// to determine the stride
-const Puzzle parse(const std::string& filename) {
+const Puzzle parse(const std::string& filename, const AOC_PART questionPart = AOC_PART::One) {
   std::ifstream file(filename);
   if (!file.is_open()) {
     throw std::runtime_error("Could not open file " + filename);
@@ -97,7 +99,8 @@ const Puzzle parse(const std::string& filename) {
           inNum = false;
         }
         inNum = false;
-        if (cur != '.') {
+        if ((questionPart == AOC_PART::One && cur != '.') 
+         || (questionPart == AOC_PART::Two && cur == '*')) {
           symbols.push_back(Vec2{x, height});
         }
       }
@@ -117,7 +120,7 @@ const Puzzle parse(const std::string& filename) {
 
 const uint part1(const std::string& filename) {  // 535235
   Puzzle puz = parse(filename);
-  unsigned int total = 0;
+  unsigned int total{0};
   for (Part& p : puz.parts) {
     if (puz.isValidPart(p)) {
       total += p.num;
@@ -126,8 +129,31 @@ const uint part1(const std::string& filename) {  // 535235
   return total;
 }
 
-const uint part2(const std::string& filename) {
+const uint partScore(const Puzzle& puz, const Vec2& gear) {
+  // run through all the parts, see which are next to gear
+  uint total = 1;
+  int count = 0;
+  for (Part p : puz.parts) {
+    if (p.bbox.isPointInBox(gear)) {
+      count++;
+      total *= p.num;
+    }
+  }
+  if (count == 2) {
+    return total;
+  }
   return 0;
+}
+
+const uint part2(const std::string& filename) {
+  // run through every symbol, check what distinct numbers they border
+  // if #distinct borders = 2, mult them and add to the total
+  Puzzle puz = parse(filename, AOC_PART::Two);
+  uint total{0};
+  for (Vec2 gear : puz.symbols) {
+    total += partScore(puz, gear);
+  }
+  return total;
 }
 
 } // namespace day03
