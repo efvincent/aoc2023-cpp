@@ -1,6 +1,5 @@
 #include "day03.hpp"
 #include <cctype>
-#include <iostream>
 #include <stdexcept>
 #include <string>
 #include <sys/types.h>
@@ -30,41 +29,34 @@ struct Puzzle {
   BoundingBox bbox;
   std::vector<Vec2> symbols;
   std::vector<Part> parts;
+  
+  char get(int x, int y) const {
+    if (!bbox.isPointInBox(Vec2{x,y}))
+      throw std::runtime_error("Puzzle index out of bounds");
+    return data[y * (bbox.lowerRight.x + 1) + x];
+  }
+  
+  bool isValidPart(Part& part) {
+    // clip the bounding box to the dimensions of the puzzle so
+    // we don't attempt to index outside of range
+    BoundingBox::clipTo(part.bbox, bbox);
 
-  char get(int x, int y) const;
-  bool isValidPart(Part& part);
+    // Lambda to check if a part is valid
+    bool isValid = false;
+    auto isValidPart = [this, &isValid](const Vec2& pos) -> bool {
+      char c = get(pos.x, pos.y);
+      if (c != '.' && !(c >= '0' && c <= '9')) {
+        isValid = true;
+        return false;   // short circuit forEachpoint
+      }
+      return true;      // keep checking
+    };    
+
+    part.bbox.forEachPoint(isValidPart);
+    return isValid;
+  }  
+
 };
-
-std::ostream& operator<<(std::ostream& os, const Part& p) {
-  os << p.num; 
-  return os;
-}
-
-char Puzzle::get(int x, int y) const {
-  if (!bbox.isPointInBox(Vec2{x,y}))
-    throw std::runtime_error("Puzzle index out of bounds");
-  return data[y * (bbox.lowerRight.x + 1) + x];
-}
-
-bool Puzzle::isValidPart(Part& part) {
-  // clip the bounding box to the dimensions of the puzzle so
-  // we don't attempt to index outside of range
-  BoundingBox::clipTo(part.bbox, bbox);
-
-  // Lambda to check if a part is valid
-  bool isValid = false;
-  auto isValidPart = [this, &isValid](const Vec2& pos) -> bool {
-    char c = get(pos.x, pos.y);
-    if (c != '.' && !(c >= '0' && c <= '9')) {
-      isValid = true;
-      return false;   // short circuit forEachpoint
-    }
-    return true;      // keep checking
-  };    
-
-  part.bbox.forEachPoint(isValidPart);
-  return isValid;
-}  
 
 void addPart(std::vector<Part>& parts, const std::vector<char>& numStr, int nStart, int height, int width) {
   int number = std::stoi(numStr.data());
