@@ -29,16 +29,16 @@ struct Card {
 using Puzzle = std::vector<Card>;
 
 Card parseLine(str line) {
-  strings split1 = Util::splitOn(line, str("|"));       
-  strings split2 = Util::splitOn(split1[0], str(":"));
+  std::vector<std::string_view> split1 = Util::splitOn(line, str("|"));       
+  std::vector<std::string_view> split2 = Util::splitOn(split1[0], str(":"));
 
-  int id = std::stoi(split2[0].substr(5)) - 1;
+  int id = std::stoi(split2[0].substr(5).data()) - 1;
   intSet nums, wins;
   for (const auto& s : Util::splitOn(split2[1], " ")) {
-    wins.insert(std::stoi(s));
+    wins.insert(std::stoi(s.data()));
   }
   for (const auto& s : Util::splitOn(split1[1], " ")) {
-    nums.insert(std::stoi(s));
+    nums.insert(std::stoi(s.data()));
   }
   return Card{ id, nums, wins};
 }

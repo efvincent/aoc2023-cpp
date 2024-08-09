@@ -8,21 +8,21 @@
 
 namespace Day02 {
 
-std::pair<uint, uint> parseCubeCount(const std::string& handStr) {
+std::pair<uint, uint> parseCubeCount(const std::string_view& handStr) {
   // example: handStr = "3 blue"
   // index of a color is the length of the colors string minus 3
   // red = 0
   // blue = 1
   // green = 2
   auto cubCountParts = Util::splitOn(handStr, " ");
-  return std::pair(cubCountParts[1].size() - 3, std::stoi(cubCountParts[0]));
+  return std::pair(cubCountParts[1].size() - 3, std::stoi(cubCountParts[0].data()));
 }
 
-Drawing parseDrawing(const std::string& drawingStr) {
+Drawing parseDrawing(const std::string_view& drawingStr) {
   // example: handsStr = 3 blue, 4 red; 1 red, 2 green, 6 blue; 2 green
   auto cubeCountStrs = Util::splitOn(drawingStr, ", ");
   Drawing drawing{0,0,0};
-  for (std::string cubeCountStr : cubeCountStrs) {
+  for (std::string_view cubeCountStr : cubeCountStrs) {
     auto [idx, count] = parseCubeCount(cubeCountStr);
     drawing[idx] = count;
   }
@@ -33,13 +33,13 @@ Game parseGame(const std::string& line) {
   // line = "Game 1: 3 blue, 4 red; 1 red, 2 green, 6 blue; 2 green"
   auto lineParts = Util::splitOn(line, ": ");
   auto gameNumParts = Util::splitOn(lineParts[0], " ");
-  auto gameNum = std::stoi(gameNumParts[1]);
+  auto gameNum = std::stoi(gameNumParts[1].data());
 
-  std::string handsStr =
+  std::string_view handsStr =
       lineParts[1]; // = "3 blue, 4 red; 1 red, 2 green, 6 blue; 2 green"
-  Strings handsStrParts = Util::splitOn(handsStr, "; ");
+  std::vector<std::string_view> handsStrParts = Util::splitOn(handsStr, "; ");
   Drawings hands;
-  for (std::string handStrs : handsStrParts) {
+  for (std::string_view handStrs : handsStrParts) {
     auto hand = parseDrawing(handStrs);
     hands.push_back(hand);
   }

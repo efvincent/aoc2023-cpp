@@ -37,7 +37,6 @@ const std::vector<T> importFile(const std::string &filename, std::function<T(std
   }
   return result;
 }
-
-std::vector<std::string> splitOn(const std::string& str, const std::string& delimiter);
+std::vector<std::string_view> splitOn(std::string_view str, std::string_view delimiter);
 
 } // namespace Util
