@@ -1,19 +1,17 @@
 #include <iostream>
 #include <cstring>
 #include <sys/types.h>
-#include "day03.hpp"
+#include "day04.hpp"
 
 int main(int argc, char** argv) {
 
-  using namespace Day03;
+  using namespace Day04;
 
-  auto filename = argc == 2 ? argv[1] : "../data/d03.txt";
+  auto filename = argc == 2 ? argv[1] : "../data/d04.txt";
 
-  auto p1Ans = part1(filename);
-  auto p2Ans = part2(filename);
-  
-  std::cout << "part 1: " << p1Ans << "\n";
-  std::cout << "part 2: " << p2Ans << "\n";
-  
+  auto [part1, part2] = solve(filename);
+
+  std::cout << "part 1: " << part1 << "\n"
+            << "part 2: " << part2 << std::endl;
   return 0;
 }
