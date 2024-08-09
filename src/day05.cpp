@@ -94,26 +94,15 @@ namespace Day05 {
         // value is in this range, map it
         ulInt offset = value - range.source_start;
         ulInt mapped_value = range.dest_start + offset;
-        std::cout << "      value " << value << " in range " 
-          << range.source_start << "," << range.source_start + range.len -1
-          << " has offset " << offset << " into dest range " 
-          << range.dest_start << "," << range.dest_start + range.len -1 
-          << " for mapped value "<< mapped_value << "\n";
         return mapped_value;
-      } else {
-        ulInt offset = value - range.source_start;
-        std::cout << "      value " << value << " not in range " 
-          << range.source_start << "," << range.source_start + range.len - 1 << "\n"; 
       }
     }
-    std::cout << "      value " << "not in any range, mapped value " << value << "\n";
     return value;
   }
 
   ulInt deref_seed(const Puzzle& puz, const ulInt seed) {    
     ulInt mapped{seed};
     for (int i = 0; i < puz.range_maps.size(); i++) {
-      std::cout << "    map #" << i << "\n";
       mapped = deref_step(puz, i, mapped);
     }
     return mapped;
@@ -121,15 +110,11 @@ namespace Day05 {
 
   std::pair<ulInt,ulInt> solve(std::string filename) {
     Puzzle puz = parse(filename);
-    pPuzzle(puz);
-
     std::vector<ulInt> mapped_seeds;
     for(const ulInt seed : puz.seeds) {
       ulInt mapped = deref_seed(puz, seed);
-      std::cout << seed << " maps to " << mapped << "\n";
       mapped_seeds.push_back(mapped);
     }
-    std::cout << std::endl;
 
     return std::pair(*std::min_element(mapped_seeds.begin(), mapped_seeds.end()), 0);
   }
