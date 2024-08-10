@@ -1,17 +1,33 @@
 #pragma once
 
+#include <chrono>
 #include <fstream>
 #include <iostream>
 #include <vector>
 #include <string>
 #include <functional>
+#include <spdlog/spdlog.h>
 
 namespace Util {
 
-class Timer {
-public:
-  Timer();
-  ~Timer();
+struct Timer {
+  
+  std::chrono::time_point<std::chrono::system_clock> start, end;
+  std::chrono::duration<float> duration;
+  std::string lbl;
+
+  Timer() : Timer("Timer") {}
+
+  Timer(std::string label) : lbl{label} {
+    start = std::chrono::high_resolution_clock::now();
+  }
+
+  ~Timer() {
+    end = std::chrono::high_resolution_clock::now();
+    duration = end - start;
+    float ms = duration.count() * 1000.0f;
+    spdlog::info("{}: {}ms", lbl, ms);
+  }
 };
 
 inline void line() { std::cout << "--------------------------------\n"; }
