@@ -12,16 +12,38 @@ namespace Day05 {
   /*----------------------------- Types -----------------------------*/
 
   struct Range {
-    ulInt dest_start{0};
-    ulInt source_start{0};
+    ulInt start{0};
+    ulInt end{0};
     int len{0};
+    bool contains(ulInt value) const { return value >= start && value <= end; }
+    static Range mk_by_end(const ulInt start, const ulInt end) {
+      ulInt s, e;
+      if (end < start) {
+        s = end;
+        e = start;
+      } else {
+        s = start;
+        e = end;
+      }
+      return Range{s, e, static_cast<int>(e - s) };
+    }
+    static Range mk_by_len(const ulInt start, const int len) {
+      return Range{start, start + len - 1, len };
+    }
   };
 
-  using RangeMap = std::vector<Range>;
+  struct RangeMap {
+    Range dest;
+    Range source;
+    bool in_source(ulInt value) const { return source.contains(value); }
+  };
+
+  using RangeMaps = std::vector<RangeMap>;
 
   struct Puzzle {
     std::vector<ulInt> seeds;
-    std::array<RangeMap, 7> range_maps;
+    std::vector<Range> seed_ranges;
+    std::array<RangeMaps, 7> range_maps;
   };
 
   using ulInts = std::vector<ulInt>;
@@ -29,17 +51,22 @@ namespace Day05 {
 
   /*------------------------ Puzzle Printing ------------------------*/
 
-  void pRange(const Range& range) {
-    std::cout << range.source_start << "->" << range.source_start + range.len - 1
-      << " maps to " << range.dest_start << "->" << range.dest_start + range.len - 1 
-      << "\n";
+  // Overload the << operator for the Range struct
+  std::ostream& operator<<(std::ostream& os, const Range& range) {
+      os << range.start << "->" << range.end;
+      return os;
+  }
+
+  // Overload the << operator for the Range struct
+  std::ostream& operator<<(std::ostream& os, const RangeMap& range_map) {
+      os << range_map.source << " maps to " << range_map.dest;
+      return os;
   }
   
-  void pRangeMap(const int rm_num, const RangeMap& rm) {
+  void pRangeMaps(const int rm_num, const RangeMaps& rm) {
     std::cout << "range map " << rm_num << ":" << "\n";
-    for (const Range& r : rm) {
-      std::cout << "  ";
-      pRange(r);      
+    for (const RangeMap& r : rm) {
+      std::cout << "  " << r << "\n";
     }
     std::cout << "\n";
   }
@@ -49,9 +76,15 @@ namespace Day05 {
     for (const auto& seed : puz.seeds) {
       std::cout << " " << seed;
     }
+    
+    std::cout << "\nseed ranges:";
+    for (const auto& seed_range : puz.seed_ranges) {
+      std::cout << "\n  " << seed_range;
+    }
+
     std::cout << "\n\n";
     for (int i = 0; i < puz.range_maps.size(); i++) {
-      pRangeMap(i, puz.range_maps[i]);
+      pRangeMaps(i, puz.range_maps[i]);
     }
   }  
   
@@ -73,20 +106,22 @@ namespace Day05 {
     for (const auto& seedRaw : seedsRaw) {
       puz.seeds.push_back(std::stoul(seedRaw.data()));
     }
+    for (int i = 0; i < puz.seeds.size() - 1; i += 2) {
+      puz.seed_ranges.push_back(Range::mk_by_end(puz.seeds[i], puz.seeds[i+1]));
+    }
     
-    for (int i = 1; i < split1.size(); i++) {
-      str_views rawMap = Util::splitOn(split1[i], "\n");
-      RangeMap rmap;
-      for (int j = 1; j < rawMap.size(); j++) {
-        str_views rawMapLine = Util::splitOn(rawMap[j], " ");
-        Range r {
-          std::stoul(rawMapLine[0].data()),
-          std::stoul(rawMapLine[1].data()),
-          std::stoi(rawMapLine[2].data())
-        };
-        rmap.push_back(r);
+    for (int split_idx = 1; split_idx < split1.size(); split_idx++) {
+      str_views raw_range_map = Util::splitOn(split1[split_idx], "\n");
+      RangeMaps range_maps;
+      for (int range_map_idx = 1; range_map_idx < raw_range_map.size(); range_map_idx++) {
+        str_views raw_line = Util::splitOn(raw_range_map[range_map_idx], " ");
+        int len = std::stoi(raw_line[2].data());
+        Range dest = Range::mk_by_len(std::stoul(raw_line[0].data()), len);
+        Range src  = Range::mk_by_len(std::stoul(raw_line[1].data()), len);
+        RangeMap range_map { dest, src };
+        range_maps.push_back(range_map);
       }
-      puz.range_maps[i-1] = rmap;
+      puz.range_maps[split_idx-1] = range_maps;
     }
     return puz;
   }
@@ -95,13 +130,13 @@ namespace Day05 {
 
   ulInt deref_step(const Puzzle& puz, int mapIdx, ulInt value) {
     // get the range map we need
-    RangeMap rm = puz.range_maps[mapIdx];
+    RangeMaps rm = puz.range_maps[mapIdx];
     // test the ranges to see if the value is mapped
     for(const auto& range : rm) {
-      if (value >= range.source_start && value <= range.source_start + range.len - 1) {
+      if (range.in_source(value)) {
         // value is in this range, map it
-        ulInt offset = value - range.source_start;
-        ulInt mapped_value = range.dest_start + offset;
+        ulInt offset = value - range.source.start;
+        ulInt mapped_value = range.dest.start + offset;
         return mapped_value;
       }
     }
@@ -123,6 +158,7 @@ namespace Day05 {
       ulInt mapped = deref_seed(puz, seed);
       mapped_seeds.push_back(mapped);
     }
+    pPuzzle(puz);
 
     return std::pair(*std::min_element(mapped_seeds.begin(), mapped_seeds.end()), 0);
   }

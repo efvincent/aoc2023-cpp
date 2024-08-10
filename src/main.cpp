@@ -10,7 +10,7 @@ int main(int argc, char** argv) {
   Util::Timer timer("Day 5 run time");
   using namespace Day05;
 
-  auto filename = argc == 2 ? argv[1] : "../data/d05.txt";
+  auto filename = argc == 2 ? argv[1] : "../data/d05ex01.txt";
 
   auto [part1, part2] = solve(filename);
 
