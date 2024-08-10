@@ -1,11 +1,6 @@
 #include "util.hpp"
 
 namespace Util {
-
-  Timer::Timer() {}
-
-  Timer::~Timer() {}
-
   std::vector<std::string_view> splitOn(std::string_view str, std::string_view delimiter) {
       std::vector<std::string_view> result;
       size_t start = 0;

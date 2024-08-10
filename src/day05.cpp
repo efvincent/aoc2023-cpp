@@ -9,19 +9,31 @@
 
 namespace Day05 {
 
+  /*----------------------------- Types -----------------------------*/
+
   struct Range {
     ulInt dest_start{0};
     ulInt source_start{0};
     int len{0};
   };
 
+  using RangeMap = std::vector<Range>;
+
+  struct Puzzle {
+    std::vector<ulInt> seeds;
+    std::array<RangeMap, 7> range_maps;
+  };
+
+  using ulInts = std::vector<ulInt>;
+  using str_views = std::vector<std::string_view>;
+
+  /*------------------------ Puzzle Printing ------------------------*/
+
   void pRange(const Range& range) {
     std::cout << range.source_start << "->" << range.source_start + range.len - 1
       << " maps to " << range.dest_start << "->" << range.dest_start + range.len - 1 
       << "\n";
   }
-
-  using RangeMap = std::vector<Range>;
   
   void pRangeMap(const int rm_num, const RangeMap& rm) {
     std::cout << "range map " << rm_num << ":" << "\n";
@@ -32,11 +44,6 @@ namespace Day05 {
     std::cout << "\n";
   }
 
-  struct Puzzle {
-    std::vector<ulInt> seeds;
-    std::array<RangeMap, 7> range_maps;
-  };
-
   void pPuzzle(const Puzzle& puz) {
     std::cout << "seeds:";
     for (const auto& seed : puz.seeds) {
@@ -46,10 +53,9 @@ namespace Day05 {
     for (int i = 0; i < puz.range_maps.size(); i++) {
       pRangeMap(i, puz.range_maps[i]);
     }
-  }
-
-  using ulInts = std::vector<ulInt>;
-  using str_views = std::vector<std::string_view>;
+  }  
+  
+  /*----------------------------- Parsing -----------------------------*/
 
   Puzzle parse(std::string filename) {
     std::ifstream file{filename};
@@ -84,6 +90,8 @@ namespace Day05 {
     }
     return puz;
   }
+
+  /*----------------------------- Solutions ----------------------------*/
 
   ulInt deref_step(const Puzzle& puz, int mapIdx, ulInt value) {
     // get the range map we need
