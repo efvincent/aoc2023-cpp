@@ -12,6 +12,9 @@ MODULE.bazel.lock
 # python
 *.pyc
 
+# vcpkg
+vcpkg_installed/
+
 # Visual Studio files
 .vs
 *.sdf
